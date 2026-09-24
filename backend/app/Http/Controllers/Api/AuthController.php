@@ -122,4 +122,26 @@ class AuthController extends Controller
     {
         return response()->json($request->user());
     }
+
+    /**
+     * ACTUALIZAR PERFIL: PATCH /api/me (requiere token)
+     * Permite cambiar el nombre y el saldo inicial
+     */
+    public function updateMe(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            // "sometimes": puedes enviar solo el campo que quieras cambiar
+            'name' => ['sometimes', 'required', 'string', 'max:100'],
+
+            // min:0 no permite saldos iniciales negativos
+            'initial_balance' => ['sometimes', 'required', 'numeric', 'min:0', 'max:9999999999.99', 'decimal:0,2'],
+        ]);
+
+        // $request->user() es el usuario del token: solo puedes editar TU perfil
+        $request->user()->update($data);
+
+        // fresh() vuelve a leer el usuario de la base de datos
+        // para devolver los valores tal como quedaron guardados
+        return response()->json($request->user()->fresh());
+    }
 }

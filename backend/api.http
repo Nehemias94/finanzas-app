@@ -266,3 +266,41 @@ Authorization: Bearer {{intruso.response.body.token}}
 DELETE {{baseUrl}}/transactions/{{gasto.response.body.data.id}}
 Accept: application/json
 Authorization: Bearer {{login.response.body.token}}
+
+
+### ========== RESUMEN MENSUAL ==========
+
+### 30. Configurar el saldo inicial en $300
+PATCH {{baseUrl}}/me
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+{
+  "initial_balance": 300
+}
+
+### 31. Resumen de AGOSTO
+GET {{baseUrl}}/summary?month=2026-08
+Accept: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+### 32. Resumen de SEPTIEMBRE
+GET {{baseUrl}}/summary?month=2026-09
+Accept: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+### 33. Resumen de OCTUBRE (sin movimientos todavía)
+GET {{baseUrl}}/summary?month=2026-10
+Accept: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+### 34. Intentar un saldo inicial negativo (debe dar 422)
+PATCH {{baseUrl}}/me
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+{
+  "initial_balance": -50
+}

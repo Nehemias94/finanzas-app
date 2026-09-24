@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CategoryController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\TransactionController;
+use App\Http\Controllers\Api\SummaryController;
 
 // Todas las rutas de este archivo tienen automáticamente el prefijo /api
 // Por ejemplo, '/register' en realidad es http://localhost:8000/api/register
@@ -24,6 +25,7 @@ Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
+    Route::patch('/me', [AuthController::class, 'updateMe']); //
 
     // apiResource crea las 5 rutas del CRUD en una sola línea
     // (index, store, show, update, destroy)
@@ -31,4 +33,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     //Transaction
     Route::apiResource('transactions', TransactionController::class);
+
+    // saldos
+    Route::get('/summary', SummaryController::class);
 });
