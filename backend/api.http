@@ -38,3 +38,94 @@ Authorization: Bearer {{login.response.body.token}}
 POST {{baseUrl}}/logout
 Accept: application/json
 Authorization: Bearer {{login.response.body.token}}
+
+### ========== CATEGORÍAS ==========
+# IMPORTANTE: antes de probar, ejecuta el LOGIN (petición 2) para tener un token válido
+# (si hiciste logout en el paso anterior, ese token ya no sirve)
+
+### 5. CREAR categoría de egreso
+# @name crearRopa
+POST {{baseUrl}}/categories
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+{
+  "name": "Ropa",
+  "type": "expense",
+  "color": "#E74C3C"
+}
+
+### 6. CREAR categoría de ingreso
+POST {{baseUrl}}/categories
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+{
+  "name": "Salario",
+  "type": "income",
+  "color": "#2ECC71"
+}
+
+### 7. LISTAR todas mis categorías
+GET {{baseUrl}}/categories
+Accept: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+### 8. LISTAR solo egresos
+GET {{baseUrl}}/categories?type=expense
+Accept: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+### 9. BUSCAR por nombre (como el autocompletado del frontend)
+GET {{baseUrl}}/categories?search=rop
+Accept: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+### 10. VER una categoría (usa el id de la que se creó en la petición 5)
+GET {{baseUrl}}/categories/{{crearRopa.response.body.data.id}}
+Accept: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+### 11. EDITAR solo el color
+PATCH {{baseUrl}}/categories/{{crearRopa.response.body.data.id}}
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+{
+  "color": "#9B59B6"
+}
+
+### 12. BORRAR la categoría
+DELETE {{baseUrl}}/categories/{{crearRopa.response.body.data.id}}
+Accept: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+
+### ========== PRUEBA DE SEGURIDAD ==========
+# Creamos un SEGUNDO usuario e intentamos ver una categoría del primero
+
+### 13. Registrar un segundo usuario
+# @name intruso
+POST {{baseUrl}}/register
+Accept: application/json
+Content-Type: application/json
+
+{
+  "name": "Intruso",
+  "email": "intruso@ejemplo.com",
+  "password": "password123",
+  "password_confirmation": "password123"
+}
+
+### 14. El intruso intenta ver una categoría ajena (debe dar 403)
+GET {{baseUrl}}/categories/{{crearRopa.response.body.data.id}}
+Accept: application/json
+Authorization: Bearer {{intruso.response.body.token}}
+
+### 15. El intruso lista categorías (debe salir vacío, no las tuyas)
+GET {{baseUrl}}/categories
+Accept: application/json
+Authorization: Bearer {{intruso.response.body.token}}

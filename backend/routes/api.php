@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\CategoryController;
 use Illuminate\Support\Facades\Route;
 
 // Todas las rutas de este archivo tienen automáticamente el prefijo /api
@@ -23,5 +24,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
 
-    // Aquí agregaremos después las rutas de categorías y movimientos
+    // apiResource crea las 5 rutas del CRUD en una sola línea
+    // (index, store, show, update, destroy)
+    Route::apiResource('categories', CategoryController::class);
 });
