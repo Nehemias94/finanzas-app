@@ -129,3 +129,140 @@ Authorization: Bearer {{intruso.response.body.token}}
 GET {{baseUrl}}/categories
 Accept: application/json
 Authorization: Bearer {{intruso.response.body.token}}
+
+### ========== MOVIMIENTOS ==========
+# Antes de empezar, ejecuta el LOGIN (petición 2) para tener un token fresco
+
+### 16. Crear una categoría de egreso para las pruebas
+# @name catGasto
+POST {{baseUrl}}/categories
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+{
+  "name": "Comida",
+  "type": "expense",
+  "color": "#F39C12"
+}
+
+### 17. Crear una categoría de ingreso para las pruebas
+# @name catIngreso
+POST {{baseUrl}}/categories
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+{
+  "name": "Trabajos extra",
+  "type": "income",
+  "color": "#1ABC9C"
+}
+
+### 18. Registrar un GASTO
+# @name gasto
+POST {{baseUrl}}/transactions
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+{
+  "category_id": {{catGasto.response.body.data.id}},
+  "amount": 25.50,
+  "date": "2026-09-20",
+  "description": "Almuerzo con amigos"
+}
+
+### 19. Registrar un INGRESO
+POST {{baseUrl}}/transactions
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+{
+  "category_id": {{catIngreso.response.body.data.id}},
+  "amount": 150,
+  "date": "2026-09-18",
+  "description": "Diseño de un logo"
+}
+
+### 20. Registrar un gasto de AGOSTO (para probar el filtro por mes)
+POST {{baseUrl}}/transactions
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+{
+  "category_id": {{catGasto.response.body.data.id}},
+  "amount": 12,
+  "date": "2026-08-05"
+}
+
+### 21. LISTAR movimientos del mes actual (septiembre)
+GET {{baseUrl}}/transactions
+Accept: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+### 22. LISTAR movimientos de agosto
+GET {{baseUrl}}/transactions?month=2026-08
+Accept: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+### 23. LISTAR solo gastos de septiembre
+GET {{baseUrl}}/transactions?month=2026-09&type=expense
+Accept: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+### 24. EDITAR el monto del gasto
+PATCH {{baseUrl}}/transactions/{{gasto.response.body.data.id}}
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+{
+  "amount": 30
+}
+
+### 25. Intentar BORRAR una categoría que tiene movimientos (debe dar 409)
+DELETE {{baseUrl}}/categories/{{catGasto.response.body.data.id}}
+Accept: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+### 26. Intentar un monto negativo (debe dar 422)
+POST {{baseUrl}}/transactions
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+{
+  "category_id": {{catGasto.response.body.data.id}},
+  "amount": -10,
+  "date": "2026-09-20"
+}
+
+
+### ========== SEGURIDAD DE MOVIMIENTOS ==========
+# Ejecuta antes el registro del intruso (13). Si ya existe, dará 422;
+# en ese caso agrega "# @name intruso" encima de un login con su correo
+
+### 27. El intruso intenta VER tu gasto (debe dar 403)
+GET {{baseUrl}}/transactions/{{gasto.response.body.data.id}}
+Accept: application/json
+Authorization: Bearer {{intruso.response.body.token}}
+
+### 28. El intruso intenta registrar un gasto en TU categoría (debe dar 422)
+POST {{baseUrl}}/transactions
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer {{intruso.response.body.token}}
+
+{
+  "category_id": {{catGasto.response.body.data.id}},
+  "amount": 100,
+  "date": "2026-09-20"
+}
+
+### 29. BORRAR el gasto (debe dar 204)
+DELETE {{baseUrl}}/transactions/{{gasto.response.body.data.id}}
+Accept: application/json
+Authorization: Bearer {{login.response.body.token}}

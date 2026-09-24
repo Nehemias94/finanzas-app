@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CategoryController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\TransactionController;
 
 // Todas las rutas de este archivo tienen automáticamente el prefijo /api
 // Por ejemplo, '/register' en realidad es http://localhost:8000/api/register
@@ -27,4 +28,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // apiResource crea las 5 rutas del CRUD en una sola línea
     // (index, store, show, update, destroy)
     Route::apiResource('categories', CategoryController::class);
+
+    //Transaction
+    Route::apiResource('transactions', TransactionController::class);
 });
