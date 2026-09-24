@@ -1,0 +1,40 @@
+# Variable con la dirección base de la API, para no repetirla
+@baseUrl = http://localhost:8000/api
+
+### 1. REGISTRO
+# "Accept: application/json" le dice a Laravel que queremos respuestas en JSON
+# "Content-Type: application/json" le dice que lo que enviamos también es JSON
+POST {{baseUrl}}/register
+Accept: application/json
+Content-Type: application/json
+
+{
+  "name": "Nehemias",
+  "email": "nehemias@ejemplo.com",
+  "password": "password123",
+  "password_confirmation": "password123"
+}
+
+### 2. LOGIN
+# "@name login" guarda la respuesta con el nombre "login"
+# para poder usar su token en las siguientes peticiones
+# @name login
+POST {{baseUrl}}/login
+Accept: application/json
+Content-Type: application/json
+
+{
+  "email": "nehemias@ejemplo.com",
+  "password": "password123"
+}
+
+### 3. QUIÉN SOY (requiere token)
+# {{login.response.body.token}} toma el token de la respuesta del login automáticamente
+GET {{baseUrl}}/me
+Accept: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+### 4. LOGOUT (requiere token)
+POST {{baseUrl}}/logout
+Accept: application/json
+Authorization: Bearer {{login.response.body.token}}
