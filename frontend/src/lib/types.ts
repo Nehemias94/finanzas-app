@@ -77,3 +77,16 @@ export interface Transaction {
 export interface ApiResource<T> {
   data: T;
 }
+
+// Respuesta paginada de Laravel (cuando el controlador usa paginate())
+// data: los registros de la página actual
+// meta: información de la paginación
+export interface Paginated<T> {
+  data: T[];
+  meta: {
+    current_page: number; // Página actual
+    last_page: number;    // Número de la última página
+    per_page: number;     // Registros por página (50)
+    total: number;        // Total de registros en todas las páginas
+  };
+}

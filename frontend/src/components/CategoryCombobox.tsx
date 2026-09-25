@@ -2,24 +2,9 @@
 
 import { useEffect, useState, type KeyboardEvent } from 'react';
 import { apiFetch, ApiError } from '@/lib/api';
+import { DEFAULT_COLOR, suggestColor } from '@/lib/colors';
+import { normalizeText } from '@/lib/format';
 import type { ApiResource, Category, TransactionType } from '@/lib/types';
-
-// Colores que se asignan automáticamente a las categorías nuevas
-// (en el Paso 11 podrás cambiar el color de cada una)
-const COLOR_PALETTE = [
-  '#E74C3C', '#3498DB', '#2ECC71', '#F39C12', '#9B59B6',
-  '#1ABC9C', '#E67E22', '#34495E', '#EC407A', '#8D6E63',
-];
-
-const DEFAULT_COLOR = '#9CA3AF';
-
-// Prepara un texto para comparar: sin tildes, en minúsculas y sin espacios en los extremos
-// Así "Educación", "educacion" y " EDUCACIÓN " se consideran iguales
-// normalize('NFD') separa las letras de sus tildes ("ó" -> "o" + "´")
-// y el replace elimina las tildes sueltas
-function normalize(text: string): string {
-  return text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
-}
 
 // Una opción de la lista puede ser de DOS tipos:
 // una categoría existente, o la opción de crear una nueva
@@ -66,11 +51,11 @@ export function CategoryCombobox({ type, value, onChange, error }: CategoryCombo
   const typed = query.trim();
   const list = categories ?? [];
 
-  // Categorías que contienen lo escrito
-  const matches = list.filter((category) => normalize(category.name).includes(normalize(typed)));
+  // Categorías que contienen lo escrito (sin importar tildes ni mayúsculas)
+  const matches = list.filter((category) => normalizeText(category.name).includes(normalizeText(typed)));
 
   // ¿Existe una categoría con EXACTAMENTE ese nombre?
-  const exactMatch = list.some((category) => normalize(category.name) === normalize(typed));
+  const exactMatch = list.some((category) => normalizeText(category.name) === normalizeText(typed));
 
   // Las opciones de la lista: las coincidencias, y al final "Crear" si hace falta
   // "as const" le dice a TypeScript que 'category' no es cualquier texto, sino ese valor exacto
@@ -110,9 +95,9 @@ export function CategoryCombobox({ type, value, onChange, error }: CategoryCombo
         body: JSON.stringify({
           name: option.name,
           type,
-          // Asignamos un color de la paleta según cuántas categorías hay
-          // El % (módulo) hace que al llegar al final de la paleta vuelva a empezar
-          color: COLOR_PALETTE[list.length % COLOR_PALETTE.length],
+          // Color sugerido desde el archivo compartido lib/colors.ts
+          // (gastos empiezan en rojo, ingresos en verde, y va rotando)
+          color: suggestColor(type, list.length),
         }),
       });
 

@@ -1,16 +1,29 @@
 'use client';
 
 import { useEffect, type ReactNode } from 'react';
-import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useIdleLogout } from '@/hooks/useIdleLogout';
 import { IdleWarningModal } from '@/components/IdleWarningModal';
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
+
+// Páginas del menú. Para agregar una página nueva al menú, solo se agrega aquí
+const NAV_ITEMS = [
+  { href: '/dashboard', label: 'Resumen' },
+  { href: '/transactions', label: 'Movimientos' },
+  { href: '/categories', label: 'Categorías' },
+];
 
 // Este layout envuelve TODAS las páginas privadas (dashboard, movimientos, categorías...)
 // Funciona como un guardia: si no hay sesión, no deja ver nada
 export default function AppLayout({ children }: { children: ReactNode }) {
   const { user, loading, error, logout } = useAuth();
   const router = useRouter();
+
+  // usePathname devuelve la ruta actual, ej: "/transactions"
+  // Lo usamos para resaltar en el menú la página en la que estás
+  // Va ANTES de cualquier "if", por las reglas de los hooks
+  const pathname = usePathname();
 
   // Activa el cierre por inactividad y nos da los datos para mostrar el aviso
   const { secondsLeft, stayLoggedIn } = useIdleLogout();
@@ -56,8 +69,28 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     <div className="min-h-screen bg-gray-50">
       {/* Barra superior, visible en todas las páginas privadas */}
       <header className="border-b border-gray-200 bg-white">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
+        {/* flex-wrap: en pantallas pequeñas, el menú baja a una segunda línea */}
+        <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-3">
           <span className="text-lg font-bold text-emerald-600">Egreso / Gasto</span>
+
+          <nav className="order-last flex w-full gap-1 sm:order-none sm:w-auto">
+            {NAV_ITEMS.map((item) => {
+              // La página está activa si la ruta actual empieza con su dirección
+              const active = pathname.startsWith(item.href);
+
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`rounded-lg px-3 py-1.5 text-sm font-medium ${
+                    active ? 'bg-emerald-50 text-emerald-700' : 'text-gray-600 hover:bg-gray-100'
+                  }`}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
+          </nav>
 
           <div className="flex items-center gap-4">
             <span className="text-sm text-gray-600">{user.name}</span>

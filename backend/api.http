@@ -304,3 +304,13 @@ Authorization: Bearer {{login.response.body.token}}
 {
   "initial_balance": -50
 }
+
+### Intentar convertir un gasto en ingreso cambiando la categoría (debe dar 422)
+PATCH {{baseUrl}}/transactions/ID_DE_UN_GASTO
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+{
+  "category_id": ID_DE_UNA_CATEGORIA_DE_INGRESO
+}

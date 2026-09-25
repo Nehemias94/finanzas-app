@@ -56,3 +56,27 @@ export function todayString(): string {
   const now = new Date();
   return `${toMonthString(now)}-${String(now.getDate()).padStart(2, '0')}`;
 }
+
+// Formateador de fechas cortas en español, ej: "sáb, 20 sept"
+const shortDateFormatter = new Intl.DateTimeFormat('es', {
+  weekday: 'short',
+  day: 'numeric',
+  month: 'short',
+});
+
+// Convierte "2026-09-20" en "sáb, 20 sept"
+export function formatShortDate(date: string): string {
+  const [year, month, day] = date.split('-').map(Number);
+
+  // IMPORTANTE: creamos la fecha con new Date(año, mes, día) y NO con new Date("2026-09-20")
+  // new Date("2026-09-20") interpreta el texto como medianoche en hora UTC,
+  // y en tu zona horaria eso todavía es el día 19 por la noche: mostraría la fecha de ayer
+  return shortDateFormatter.format(new Date(year, month - 1, day));
+}
+
+// Prepara un texto para comparar: sin tildes, en minúsculas y sin espacios en los extremos
+// Así "Educación", "educacion" y " EDUCACIÓN " se consideran iguales
+// (antes vivía dentro de CategoryCombobox con el nombre "normalize")
+export function normalizeText(text: string): string {
+  return text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+}
