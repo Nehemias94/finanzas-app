@@ -319,3 +319,7 @@ Authorization: Bearer {{login.response.body.token}}
 GET {{baseUrl}}/summary/history?month=2026-09&months=6
 Accept: application/json
 Authorization: Bearer {{login.response.body.token}}
+
+### Salud del servidor (no necesita token)
+GET {{baseUrl}}/health
+Accept: application/json

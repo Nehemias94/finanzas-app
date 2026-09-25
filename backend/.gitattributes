@@ -9,3 +9,5 @@
 /.github export-ignore
 CHANGELOG.md export-ignore
 .styleci.yml export-ignore
+# Los scripts de Linux siempre con saltos de línea LF, aunque se editen en Windows
+*.sh text eol=lf
