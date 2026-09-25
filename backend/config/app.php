@@ -16,6 +16,12 @@ return [
     'name' => env('APP_NAME', 'Laravel'),
 
     /*
+    | ¿Se permite crear cuentas nuevas?
+    | En producción, después de crear tu cuenta, se pone en false desde el panel de Render
+    */
+    'registration_enabled' => (bool) env('REGISTRATION_ENABLED', true),
+
+    /*
     |--------------------------------------------------------------------------
     | Application Environment
     |--------------------------------------------------------------------------

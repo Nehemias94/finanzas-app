@@ -18,6 +18,13 @@ class AuthController extends Controller
      */
     public function register(Request $request): JsonResponse
     {
+        // Si el registro está desactivado, respondemos 403 (prohibido) sin hacer nada más
+        if (! config('app.registration_enabled')) {
+            return response()->json([
+                'message' => 'El registro de nuevas cuentas está desactivado.',
+            ], 403);
+        }
+
         // validate() revisa los datos que llegaron
         // Si algo no cumple las reglas, Laravel detiene todo aquí
         // y responde automáticamente con un error 422 explicando qué falló
