@@ -8,6 +8,7 @@ import { MonthSelector } from '@/components/MonthSelector';
 import { SummaryCards } from '@/components/SummaryCards';
 import { CategoryBreakdownList } from '@/components/CategoryBreakdownList';
 import type { Summary } from '@/lib/types';
+import { TransactionFormModal } from '@/components/TransactionFormModal';
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -24,6 +25,9 @@ export default function DashboardPage() {
 
   // Contador para el botón "Reintentar": al cambiarlo, el efecto se vuelve a ejecutar
   const [reloadKey, setReloadKey] = useState(0);
+
+  // ¿Se muestra la ventana para registrar un movimiento?
+  const [showForm, setShowForm] = useState(false);
 
   // Cada vez que cambia el mes (o se presiona Reintentar), pedimos el resumen
   useEffect(() => {
@@ -64,6 +68,18 @@ export default function DashboardPage() {
     setReloadKey((key) => key + 1); // Forma segura de actualizar un estado basado en su valor anterior
   }
 
+    // Se ejecuta cuando el formulario guardó un movimiento
+  function handleSaved(date: string) {
+    setShowForm(false);
+
+    // Mostramos el mes del movimiento: "2026-09-20".slice(0, 7) -> "2026-09"
+    // Si registraste un gasto de un mes anterior, el dashboard va a ese mes
+    setMonth(date.slice(0, 7));
+
+    // Recargamos el resumen para que incluya el movimiento nuevo
+    setReloadKey((key) => key + 1);
+  }
+
   return (
     <div className="space-y-6">
       {/* Encabezado: saludo a la izquierda, selector de mes a la derecha */}
@@ -74,7 +90,15 @@ export default function DashboardPage() {
           <p className="text-gray-500">Este es el resumen de tu mes</p>
         </div>
 
-        <MonthSelector month={month} onChange={setMonth} />
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <MonthSelector month={month} onChange={setMonth} />
+          <button
+            onClick={() => setShowForm(true)}
+            className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
+          >
+            + Registrar movimiento
+          </button>
+        </div>
       </div>
 
       {/* Error con botón para reintentar */}
@@ -111,6 +135,11 @@ export default function DashboardPage() {
             />
           </div>
         </div>
+      )}
+
+      {/* Ventana para registrar un movimiento */}
+      {showForm && (
+        <TransactionFormModal onClose={() => setShowForm(false)} onSaved={handleSaved} />
       )}
     </div>
   );

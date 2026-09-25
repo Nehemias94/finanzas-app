@@ -46,3 +46,34 @@ export interface Summary {
   expenses_by_category: CategoryBreakdown[]; // [] significa "lista de"
   income_by_category: CategoryBreakdown[];
 }
+
+// Los dos tipos posibles de movimiento y categoría
+export type TransactionType = 'income' | 'expense';
+
+// Una categoría, tal como la devuelve CategoryResource
+export interface Category {
+  id: number;
+  name: string;
+  type: TransactionType;
+  color: string | null;
+  transactions_count?: number; // El ? indica que no siempre viene
+  created_at: string;
+}
+
+// Un movimiento, tal como lo devuelve TransactionResource
+export interface Transaction {
+  id: number;
+  amount: string;
+  date: string;
+  description: string | null;
+  type: TransactionType;
+  category: Category;
+  created_at: string;
+}
+
+// Los Resources de Laravel envuelven la respuesta en una llave "data"
+// <T> es un genérico: ApiResource<Category> significa { data: Category }
+// y ApiResource<Category[]> significa { data: Category[] }
+export interface ApiResource<T> {
+  data: T;
+}

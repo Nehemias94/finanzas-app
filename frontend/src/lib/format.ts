@@ -49,3 +49,10 @@ export function formatMonthLabel(month: string): string {
   // Ponemos en mayúscula solo la primera letra para usarlo como título
   return label.charAt(0).toUpperCase() + label.slice(1);
 }
+
+// La fecha de hoy en formato "AAAA-MM-DD", según la hora de TU computadora
+// Reutilizamos toMonthString para el año y el mes, y le agregamos el día
+export function todayString(): string {
+  const now = new Date();
+  return `${toMonthString(now)}-${String(now.getDate()).padStart(2, '0')}`;
+}
