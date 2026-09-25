@@ -53,6 +53,13 @@ return [
     'expiration' => null,
 
     /*
+    | Minutos de inactividad permitidos antes de rechazar un token
+    | Debe ser MAYOR que el tiempo del frontend (30), para que el frontend
+    | avise y cierre primero, y Laravel sea la red de seguridad
+    */
+    'idle_timeout' => 10,
+
+    /*
     |--------------------------------------------------------------------------
     | Token Prefix
     |--------------------------------------------------------------------------
