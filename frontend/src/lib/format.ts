@@ -80,3 +80,12 @@ export function formatShortDate(date: string): string {
 export function normalizeText(text: string): string {
   return text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
 }
+
+// Formateador de meses cortos, ej: "sept 26"
+const shortMonthFormatter = new Intl.DateTimeFormat('es', { month: 'short', year: '2-digit' });
+
+// Convierte "2026-09" en "sept 26" (para las etiquetas de las gráficas, donde hay poco espacio)
+export function formatMonthShort(month: string): string {
+  const [year, monthNumber] = month.split('-').map(Number);
+  return shortMonthFormatter.format(new Date(year, monthNumber - 1, 1));
+}

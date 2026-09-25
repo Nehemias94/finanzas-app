@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\CategoryController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\TransactionController;
 use App\Http\Controllers\Api\SummaryController;
+use App\Http\Controllers\Api\SummaryHistoryController;
 
 // Todas las rutas de este archivo tienen automáticamente el prefijo /api
 // Por ejemplo, '/register' en realidad es http://localhost:8000/api/register
@@ -36,4 +37,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // saldos
     Route::get('/summary', SummaryController::class);
+
+    Route::get('/summary/history', SummaryHistoryController::class); // GRAFICA DONA
 });

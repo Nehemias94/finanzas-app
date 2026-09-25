@@ -90,3 +90,12 @@ export interface Paginated<T> {
     total: number;        // Total de registros en todas las páginas
   };
 }
+
+// Un mes del historial (GET /api/summary/history)
+export interface MonthHistory {
+  month: string;           // ej: "2026-09"
+  income: string;
+  expense: string;
+  balance: string;         // Ingresos - egresos del mes
+  closing_balance: string; // Saldo acumulado al final del mes
+}

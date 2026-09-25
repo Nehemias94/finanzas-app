@@ -314,3 +314,8 @@ Authorization: Bearer {{login.response.body.token}}
 {
   "category_id": ID_DE_UNA_CATEGORIA_DE_INGRESO
 }
+
+### Historial de los últimos 6 meses
+GET {{baseUrl}}/summary/history?month=2026-09&months=6
+Accept: application/json
+Authorization: Bearer {{login.response.body.token}}

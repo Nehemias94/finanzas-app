@@ -7,8 +7,9 @@ import { currentMonth } from '@/lib/format';
 import { MonthSelector } from '@/components/MonthSelector';
 import { SummaryCards } from '@/components/SummaryCards';
 import { CategoryBreakdownList } from '@/components/CategoryBreakdownList';
-import type { Summary } from '@/lib/types';
+import { MonthlyHistoryChart } from '@/components/MonthlyHistoryChart';
 import { TransactionFormModal } from '@/components/TransactionFormModal';
+import type { Summary } from '@/lib/types';
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -23,13 +24,14 @@ export default function DashboardPage() {
   // Error al cargar. Guardamos también el mes, para saber a qué mes corresponde
   const [error, setError] = useState<{ month: string; message: string } | null>(null);
 
-  // Contador para el botón "Reintentar": al cambiarlo, el efecto se vuelve a ejecutar
+  // Contador para recargar: al cambiarlo, el efecto se vuelve a ejecutar
+  // Lo usan el botón "Reintentar", el formulario al guardar, y la gráfica del historial
   const [reloadKey, setReloadKey] = useState(0);
 
   // ¿Se muestra la ventana para registrar un movimiento?
   const [showForm, setShowForm] = useState(false);
 
-  // Cada vez que cambia el mes (o se presiona Reintentar), pedimos el resumen
+  // Cada vez que cambia el mes (o se pide recargar), pedimos el resumen
   useEffect(() => {
     // "cancelled" evita un problema llamado "condición de carrera":
     // si cambias de agosto a septiembre muy rápido, y la respuesta de agosto
@@ -68,7 +70,7 @@ export default function DashboardPage() {
     setReloadKey((key) => key + 1); // Forma segura de actualizar un estado basado en su valor anterior
   }
 
-    // Se ejecuta cuando el formulario guardó un movimiento
+  // Se ejecuta cuando el formulario guardó un movimiento
   function handleSaved(date: string) {
     setShowForm(false);
 
@@ -76,13 +78,13 @@ export default function DashboardPage() {
     // Si registraste un gasto de un mes anterior, el dashboard va a ese mes
     setMonth(date.slice(0, 7));
 
-    // Recargamos el resumen para que incluya el movimiento nuevo
+    // Recargamos el resumen Y el historial para que incluyan el movimiento nuevo
     setReloadKey((key) => key + 1);
   }
 
   return (
     <div className="space-y-6">
-      {/* Encabezado: saludo a la izquierda, selector de mes a la derecha */}
+      {/* Encabezado: saludo a la izquierda, selector de mes y botón a la derecha */}
       {/* flex-col en celular (uno debajo del otro), flex-row en pantallas medianas */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
@@ -126,18 +128,24 @@ export default function DashboardPage() {
             <CategoryBreakdownList
               title="¿En qué gastaste?"
               items={summary.expenses_by_category}
+              total={summary.total_expense}
               emptyMessage="No registraste gastos este mes."
             />
             <CategoryBreakdownList
               title="¿De dónde vinieron tus ingresos?"
               items={summary.income_by_category}
+              total={summary.total_income}
               emptyMessage="No registraste ingresos este mes."
             />
           </div>
         </div>
       )}
 
-      {/* Ventana para registrar un movimiento */}
+      {/* Historial de los últimos meses: carga sus propios datos según el mes seleccionado
+          Va FUERA del bloque del resumen: así se muestra aunque el resumen tenga un error */}
+      <MonthlyHistoryChart month={month} reloadKey={reloadKey} />
+
+      {/* Ventana para registrar un movimiento: solo se muestra cuando showForm es true */}
       {showForm && (
         <TransactionFormModal onClose={() => setShowForm(false)} onSaved={handleSaved} />
       )}
