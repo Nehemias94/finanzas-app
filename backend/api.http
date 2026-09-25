@@ -24,8 +24,8 @@ Accept: application/json
 Content-Type: application/json
 
 {
-  "email": "nehemias@ejemplo.com",
-  "password": "password123"
+  "email": "{{$dotenv API_TEST_EMAIL}}",
+  "password": "{{$dotenv API_TEST_PASSWORD}}"
 }
 
 ### 3. QUIÉN SOY (requiere token)
