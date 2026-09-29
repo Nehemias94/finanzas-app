@@ -1,67 +1,76 @@
-// 'use client' indica que este componente se ejecuta en el NAVEGADOR
-// Es necesario porque usamos estado (useState), efectos (useEffect) y localStorage
 'use client';
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
-//import { apiFetch } from '@/lib/api'; // @/ es un atajo que apunta a la carpeta src/
-//import { getToken, removeToken, setToken } from '@/lib/token';
+import { apiFetch, ApiError, wakeServer } from '@/lib/api';
 import { getToken, isSessionIdle, removeToken, setLogoutReason, setToken } from '@/lib/token';
 import type { AuthResponse, User } from '@/lib/types';
-import { apiFetch, ApiError } from '@/lib/api';
 
 // Describimos todo lo que el contexto ofrece
 interface AuthContextValue {
-  user: User | null;  // El usuario actual, o null si no hay sesión
-  loading: boolean;   // true mientras verificamos si hay una sesión guardada
-  error: string | null; // <-- mensaje si no se pudo verificar la sesión
+  user: User | null;     // El usuario actual, o null si no hay sesión
+  loading: boolean;      // true mientras se prepara la app (despertar servidor + verificar sesión)
+  waking: boolean;       // NUEVO: true si el servidor está tardando en despertar
+  error: string | null;  // Mensaje si no se pudo conectar con el servidor
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string, passwordConfirmation: string) => Promise<void>;
   logout: () => Promise<void>;
-  setUser: (user: User) => void; // Para actualizar el usuario (ej: al editar el perfil)
+  setUser: (user: User) => void;
 }
 
-// Creamos el contexto. Empieza en null hasta que el Provider le dé un valor
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-// El Provider "envuelve" la aplicación y le entrega los datos a todos los componentes de adentro
+// Si el servidor tarda más que esto en responder, avisamos que está despertando
+const WAKING_MESSAGE_DELAY_MS = 3000;
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [waking, setWaking] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // useEffect con [] se ejecuta UNA vez, cuando la aplicación carga en el navegador
-  // Aquí revisamos si ya había una sesión guardada (por ejemplo, si recargaste la página)
+  // Se ejecuta UNA vez, cuando la aplicación carga en el navegador
   useEffect(() => {
     async function loadUser() {
-      // Sin token no hay sesión: terminamos de cargar
+      // 1. Si había una sesión guardada pero pasó demasiado tiempo sin actividad,
+      //    la cerramos de inmediato (sin preguntarle nada al servidor)
+      if (getToken() && isSessionIdle()) {
+        removeToken();
+        setLogoutReason('inactivity');
+      }
+
+      // 2. Despertamos al servidor ANTES de cualquier otra petición
+      //    Si tarda más de 3 segundos, activamos el mensaje "Despertando el servidor..."
+      //    setTimeout ejecuta una función después de cierto tiempo, sin detener el resto del código
+      const wakingTimer = setTimeout(() => setWaking(true), WAKING_MESSAGE_DELAY_MS);
+      const awake = await wakeServer();
+      clearTimeout(wakingTimer); // Si respondió antes de 3 segundos, el mensaje nunca aparece
+      setWaking(false);
+
+      // 3. Sin token no hay sesión que verificar: mostramos el login
+      //    (si el servidor no despertó, el propio login mostrará el error al intentar entrar)
       if (!getToken()) {
         setLoading(false);
         return;
       }
 
-        // si pasó demasiado tiempo desde la última actividad,
-      // cerramos la sesión sin siquiera preguntarle a Laravel
-      if (isSessionIdle()) {
-        removeToken();
-        setLogoutReason('inactivity');
+      // 4. Hay sesión guardada, pero el servidor no respondió: avisamos sin cerrar la sesión
+      if (!awake) {
+        setError('No se pudo conectar con el servidor. Revisa tu conexión e intenta de nuevo.');
         setLoading(false);
         return;
       }
 
+      // 5. Servidor despierto y con token: preguntamos "¿quién soy?"
       try {
-        // Con token, le preguntamos a Laravel "¿quién soy?"
-        // Si el token es válido, obtenemos el usuario
         const me = await apiFetch<User>('/me');
         setUser(me);
-      } catch (err){
+      } catch (err) {
         // Si fue 401, apiFetch ya borró el token: la sesión realmente no es válida
-        // Si fue OTRO error (servidor apagado, error 500, lentitud),
-        // conservamos el token y avisamos, en vez de cerrar la sesión
+        // Si fue otro error, conservamos el token y avisamos
         if (!(err instanceof ApiError && err.status === 401)) {
-          setError('No se pudo conectar con el servidor. Revisa que Laravel esté encendido.');
+          setError('No se pudo conectar con el servidor. Revisa tu conexión e intenta de nuevo.');
         }
       } finally {
-        // finally se ejecuta siempre, haya salido bien o mal
         setLoading(false);
       }
     }
@@ -73,7 +82,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function login(email: string, password: string) {
     const data = await apiFetch<AuthResponse>('/login', {
       method: 'POST',
-      // JSON.stringify convierte el objeto en texto JSON para enviarlo
       body: JSON.stringify({ email, password, device_name: 'web' }),
     });
 
@@ -89,7 +97,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         name,
         email,
         password,
-        password_confirmation: passwordConfirmation, // Laravel espera este nombre exacto
+        password_confirmation: passwordConfirmation,
         device_name: 'web',
       }),
     });
@@ -103,26 +111,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await apiFetch('/logout', { method: 'POST' });
     } finally {
-      // Aunque Laravel falle, cerramos la sesión localmente
       removeToken();
       setUser(null);
     }
   }
 
-  // value es lo que reciben todos los componentes que usen el contexto
   return (
-    <AuthContext.Provider value={{ user, loading, error, login, register, logout, setUser }}>
+    <AuthContext.Provider value={{ user, loading, waking, error, login, register, logout, setUser }}>
       {children}
     </AuthContext.Provider>
   );
 }
 
-// Hook personalizado para usar el contexto fácilmente: const { user } = useAuth();
-// Los hooks en React siempre empiezan con "use"
+// Hook para usar el contexto: const { user } = useAuth();
 export function useAuth(): AuthContextValue {
   const context = useContext(AuthContext);
 
-  // Si alguien usa useAuth() fuera del AuthProvider, avisamos con un error claro
   if (!context) {
     throw new Error('useAuth debe usarse dentro de un AuthProvider');
   }

@@ -1,5 +1,5 @@
 # Variable con la dirección base de la API, para no repetirla
-@baseUrl = http://localhost:8000/api
+@baseUrl = https://finanzas-app-3tyl.onrender.com/api
 
 ### 1. REGISTRO
 # "Accept: application/json" le dice a Laravel que queremos respuestas en JSON

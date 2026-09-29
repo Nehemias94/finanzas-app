@@ -8,6 +8,8 @@ import { MonthSelector } from '@/components/MonthSelector';
 import { SummaryCards } from '@/components/SummaryCards';
 import { CategoryBreakdownList } from '@/components/CategoryBreakdownList';
 import { MonthlyHistoryChart } from '@/components/MonthlyHistoryChart';
+import { RecentTransactions } from '@/components/RecentTransactions';
+import { InitialBalanceTip } from '@/components/InitialBalanceTip';
 import { TransactionFormModal } from '@/components/TransactionFormModal';
 import type { Summary } from '@/lib/types';
 
@@ -24,8 +26,8 @@ export default function DashboardPage() {
   // Error al cargar. Guardamos también el mes, para saber a qué mes corresponde
   const [error, setError] = useState<{ month: string; message: string } | null>(null);
 
-  // Contador para recargar: al cambiarlo, el efecto se vuelve a ejecutar
-  // Lo usan el botón "Reintentar", el formulario al guardar, y la gráfica del historial
+  // Contador para recargar. Lo comparten el resumen, el historial y los últimos movimientos:
+  // al cambiarlo, los tres se actualizan al mismo tiempo
   const [reloadKey, setReloadKey] = useState(0);
 
   // ¿Se muestra la ventana para registrar un movimiento?
@@ -78,7 +80,7 @@ export default function DashboardPage() {
     // Si registraste un gasto de un mes anterior, el dashboard va a ese mes
     setMonth(date.slice(0, 7));
 
-    // Recargamos el resumen Y el historial para que incluyan el movimiento nuevo
+    // Recargamos todo: resumen, historial y últimos movimientos
     setReloadKey((key) => key + 1);
   }
 
@@ -103,6 +105,9 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      {/* Aviso para configurar el saldo inicial (solo si está en $0 y no se cerró antes) */}
+      <InitialBalanceTip />
+
       {/* Error con botón para reintentar */}
       {currentError && (
         <div className="rounded-2xl bg-red-50 p-4 text-red-800">
@@ -123,27 +128,36 @@ export default function DashboardPage() {
         <div className={`space-y-6 transition-opacity ${loading ? 'opacity-50' : ''}`}>
           <SummaryCards summary={summary} />
 
-          {/* Dos columnas en pantallas medianas: egresos a la izquierda, ingresos a la derecha */}
+          {/* Dos columnas en pantallas medianas: egresos a la izquierda, ingresos a la derecha
+              month: lo necesitan para armar el enlace de cada categoría hacia Movimientos */}
           <div className="grid gap-6 md:grid-cols-2">
             <CategoryBreakdownList
               title="¿En qué gastaste?"
               items={summary.expenses_by_category}
               total={summary.total_expense}
+              month={month}
               emptyMessage="No registraste gastos este mes."
             />
             <CategoryBreakdownList
               title="¿De dónde vinieron tus ingresos?"
               items={summary.income_by_category}
               total={summary.total_income}
+              month={month}
               emptyMessage="No registraste ingresos este mes."
             />
           </div>
         </div>
       )}
 
-      {/* Historial de los últimos meses: carga sus propios datos según el mes seleccionado
-          Va FUERA del bloque del resumen: así se muestra aunque el resumen tenga un error */}
-      <MonthlyHistoryChart month={month} reloadKey={reloadKey} />
+      {/* Historial y últimos movimientos, lado a lado en pantallas grandes (lg:)
+          El historial ocupa 2 de las 3 columnas (lg:col-span-2), y los movimientos 1
+          Van FUERA del bloque del resumen: así se muestran aunque el resumen tenga un error */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <MonthlyHistoryChart month={month} reloadKey={reloadKey} />
+        </div>
+        <RecentTransactions month={month} reloadKey={reloadKey} />
+      </div>
 
       {/* Ventana para registrar un movimiento: solo se muestra cuando showForm es true */}
       {showForm && (

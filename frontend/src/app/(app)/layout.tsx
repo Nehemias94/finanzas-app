@@ -6,6 +6,7 @@ import { useIdleLogout } from '@/hooks/useIdleLogout';
 import { IdleWarningModal } from '@/components/IdleWarningModal';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { LoadingScreen } from '@/components/LoadingScreen';
 
 // Páginas del menú. Para agregar una página nueva al menú, solo se agrega aquí
 const NAV_ITEMS = [
@@ -52,12 +53,8 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   }
 
   // Mientras verificamos la sesión (o si no hay usuario), no mostramos el contenido privado
-  if (loading || !user) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50">
-        <p className="text-gray-500">Cargando...</p>
-      </div>
-    );
+   if (loading || !user) {
+    return <LoadingScreen />;
   }
 
   async function handleLogout() {

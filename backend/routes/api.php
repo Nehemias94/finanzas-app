@@ -22,6 +22,11 @@ use Illuminate\Support\Facades\Route;
 // fn () => ... es una función flecha: una función corta en una sola línea
 Route::get('/health', fn() => response()->json(['status' => 'ok']));
 
+/*Route::get('/health', function () {
+    sleep(6); // Espera 6 segundos antes de responder
+    return response()->json(['status' => 'ok']);
+});*/
+
 // Registro de cuentas nuevas
 // Se puede desactivar con REGISTRATION_ENABLED=false (ver AuthController)
 Route::post('/register', [AuthController::class, 'register']);

@@ -21,7 +21,7 @@ export class ApiError extends Error {
 // Función genérica para hablar con la API
 // <T> es un "genérico": quien la llama indica qué tipo de dato espera recibir
 // Ejemplo: apiFetch<User>('/me') devuelve una Promise<User>
-export async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
+export async function apiFetch<T>( path: string,{ timeout = 15000, ...options }: RequestInit & { timeout?: number } = {},): Promise<T> {
   const token = getToken();
 
   // Armamos los encabezados, conservando los que vengan en options
@@ -51,7 +51,8 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
       // AbortSignal.timeout cancela la petición si tarda más de 15 segundos
       // (15000 milisegundos). Sin esto, fetch podría esperar para siempre
       // Si quien llama ya envió su propio signal, respetamos ese
-      signal: options.signal ?? AbortSignal.timeout(15000),
+      //signal: options.signal ?? AbortSignal.timeout(15000),
+      signal: options.signal ?? AbortSignal.timeout(timeout),
     });
   } catch (err) {
     // Si se canceló por el tiempo límite, el error se llama "TimeoutError"
@@ -64,15 +65,20 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
   }
   // ===== FIN DEL CAMBIO =====
 
-  // 401 con token = el token ya no es válido (expiró o lo borraron)
+ // 401 con token = el token ya no es válido (expiró o lo borraron)
   // Lo eliminamos y mandamos al usuario al login
   if (response.status === 401 && token) {
     removeToken();
-    setLogoutReason('expired'); // <-- para que el login muestre el mensaje
+    setLogoutReason('expired');
+
+    // Aquí NO podemos usar useRouter(): es un hook y solo funciona dentro de componentes,
+    // y apiFetch es una función normal. Además queremos una recarga COMPLETA de la página,
+    // para borrar de la memoria todos los datos del usuario anterior
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination
     window.location.href = '/login';
+
     throw new ApiError(401, 'Tu sesión expiró. Inicia sesión de nuevo.');
   }
-
   // 204 = sin contenido (ej: al borrar). No hay JSON que leer
   if (response.status === 204) {
     return undefined as T;
@@ -93,4 +99,17 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
   }
 
   return data as T;
+  
+}
+
+// "Despierta" al servidor: le pide la ruta de salud con un tiempo de espera largo
+// En el plan gratuito de Render, el servidor se apaga tras 15 minutos sin uso
+// y tarda cerca de un minuto en encender. Devuelve true si respondió
+export async function wakeServer(): Promise<boolean> {
+  try {
+    await apiFetch('/health', { timeout: 90000 }); // 90 segundos
+    return true;
+  } catch {
+    return false;
+  }
 }

@@ -3,6 +3,7 @@
 import { useEffect, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
+import { LoadingScreen } from '@/components/LoadingScreen';
 
 // Este layout envuelve las páginas de login y registro
 export default function AuthLayout({ children }: { children: ReactNode }) {
@@ -19,12 +20,9 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
   // ===== NUEVO =====
   // Mientras verificamos la sesión, o si ya sabemos que hay usuario
   // (y estamos a punto de redirigir), NO mostramos el formulario
+    // Mientras se prepara la app, o si ya hay usuario (y estamos por redirigir), no mostramos el formulario
   if (loading || user) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50">
-        <p className="text-gray-500">Cargando...</p>
-      </div>
-    );
+    return <LoadingScreen />;
   }
   // ===== FIN DE LO NUEVO =====
 
