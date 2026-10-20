@@ -67,6 +67,11 @@ Route::middleware('auth:sanctum')->group(function () {
     // Acepta filtros: ?month=2026-09, ?type=expense, ?category_id=3, ?per_page=5
     Route::apiResource('transactions', TransactionController::class);
 
+    // Vaciar un mes completo: borra todos los movimientos de ese mes
+    // Ejemplo: DELETE /transactions?month=2026-09
+    // No choca con DELETE /transactions/{id} porque esta ruta no lleva id
+    Route::delete('/transactions', [TransactionController::class, 'destroyMonth']);
+
     // --- Resúmenes ---
 
     // Resumen de un mes: tarjetas, donas y desglose por categoría

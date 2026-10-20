@@ -117,4 +117,29 @@ class TransactionController extends Controller
 
         return response()->noContent();
     }
+
+    /**
+     * VACIAR UN MES: DELETE /api/transactions?month=2026-09
+     * Borra TODOS los movimientos del usuario en ese mes
+     */
+    public function destroyMonth(Request $request)
+    {
+        // Aquí el mes es obligatorio: no queremos borrar el mes actual por accidente
+        $request->validate([
+            'month' => ['required', 'date_format:Y-m'],
+        ]);
+
+        // Mismo truco del día 1 que en index()
+        $month = Carbon::createFromFormat('Y-m-d', $request->input('month') . '-01');
+        $start = $month->copy()->startOfMonth()->toDateString();
+        $end = $month->copy()->endOfMonth()->toDateString();
+
+        // Partimos de SUS movimientos, así nunca se borran los de otro usuario
+        // delete() en una consulta borra todas las filas de una vez y devuelve cuántas fueron
+        $deleted = $request->user()->transactions()
+            ->whereBetween('date', [$start, $end])
+            ->delete();
+
+        return response()->json(['deleted' => $deleted]);
+    }
 }

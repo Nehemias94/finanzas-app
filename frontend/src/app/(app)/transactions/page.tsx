@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { apiFetch, ApiError } from '@/lib/api';
-import { currentMonth, formatMoney, formatShortDate } from '@/lib/format';
+import { currentMonth, formatMoney, formatMonthLabel, formatShortDate } from '@/lib/format';
 import { MonthSelector } from '@/components/MonthSelector';
 import { TransactionFormModal } from '@/components/TransactionFormModal';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
@@ -39,6 +39,11 @@ export default function TransactionsPage() {
   const [toDelete, setToDelete] = useState<Transaction | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
+
+  // Ventana para vaciar el mes completo
+  const [clearOpen, setClearOpen] = useState(false);
+  const [clearing, setClearing] = useState(false);
+  const [clearError, setClearError] = useState('');
 
   // Llave que identifica la consulta actual
   const queryKey = `${month}|${typeFilter}|${page}`;
@@ -127,6 +132,23 @@ export default function TransactionsPage() {
     }
   }
 
+  async function handleClearMonth() {
+    setClearing(true);
+    setClearError('');
+
+    try {
+      // Sin filtro de tipo: se borran gastos E ingresos del mes
+      await apiFetch(`/transactions?${new URLSearchParams({ month })}`, { method: 'DELETE' });
+      setClearOpen(false);
+      setPage(1);
+      reload();
+    } catch (err) {
+      setClearError(err instanceof ApiError ? err.message : 'No se pudo vaciar el mes.');
+    } finally {
+      setClearing(false);
+    }
+  }
+
   const transactions = result?.data.data ?? [];
   const meta = result?.data.meta;
 
@@ -155,19 +177,35 @@ export default function TransactionsPage() {
         </div>
       </div>
 
-      {/* Filtros: Todos / Gastos / Ingresos */}
-      <div className="inline-flex gap-1 rounded-lg bg-gray-100 p-1">
-        {FILTERS.map((filter) => (
+      <div className="flex items-center justify-between gap-3">
+        {/* Filtros: Todos / Gastos / Ingresos */}
+        <div className="inline-flex gap-1 rounded-lg bg-gray-100 p-1">
+          {FILTERS.map((filter) => (
+            <button
+              key={filter.value}
+              onClick={() => changeFilter(filter.value)}
+              className={`rounded-md px-4 py-1.5 text-sm font-medium ${
+                typeFilter === filter.value ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500'
+              }`}
+            >
+              {filter.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Vaciar el mes: solo con el filtro "Todos" (así el total mostrado es el que se borra)
+            y solo si hay algo que borrar */}
+        {typeFilter === 'all' && meta && meta.total > 0 && !loading && (
           <button
-            key={filter.value}
-            onClick={() => changeFilter(filter.value)}
-            className={`rounded-md px-4 py-1.5 text-sm font-medium ${
-              typeFilter === filter.value ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500'
-            }`}
+            onClick={() => {
+              setClearError('');
+              setClearOpen(true);
+            }}
+            className="rounded-lg px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50"
           >
-            {filter.label}
+            Vaciar mes
           </button>
-        ))}
+        )}
       </div>
 
       {currentError && (
@@ -291,6 +329,25 @@ export default function TransactionsPage() {
           error={deleteError}
           onConfirm={handleDelete}
           onCancel={() => setToDelete(null)}
+        />
+      )}
+
+      {/* Confirmación para vaciar el mes */}
+      {clearOpen && meta && (
+        <ConfirmDialog
+          title={`¿Vaciar ${formatMonthLabel(month)}?`}
+          message={
+            <>
+              Vas a eliminar <strong>{meta.total} {meta.total === 1 ? 'movimiento' : 'movimientos'}</strong>{' '}
+              (gastos e ingresos) de {formatMonthLabel(month).toLowerCase()}. El mes quedará en cero.
+              Esta acción no se puede deshacer.
+            </>
+          }
+          confirmLabel="Vaciar mes"
+          loading={clearing}
+          error={clearError}
+          onConfirm={handleClearMonth}
+          onCancel={() => setClearOpen(false)}
         />
       )}
     </div>
